@@ -7,5 +7,8 @@ build
 # Ignore vscode bit
 bin
 
-# Ignore vscode project files
+# Ignore vscode ide project files
 .vscode
+
+# Ignore idea ide project files
+.idea

@@ -1,6 +1,7 @@
 package ee.siimp.esteid.personaldatafile;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
@@ -13,9 +14,8 @@ import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 
-public class App {
 
-    public static final int PERSONAL_DATA_FILE_COUNT = 15;
+public class App {
 
     public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InterruptedException {
         List<CardTerminal> terminals = TerminalFactory.getDefault().terminals().list();
@@ -25,37 +25,57 @@ public class App {
         }
 
         if (terminals.isEmpty()) {
-            System.out.println("no smartcard readers found");
+            System.err.println("no smart card readers found");
             System.exit(0);
         }
 
         CardTerminal terminal = terminals.get(0);
-        System.out.println(String.format("card reader: %s", terminal.getName()));
+        System.err.println(String.format("card reader: %s", terminal.getName()));
 
         if (!terminal.isCardPresent()) {
-            System.out.println("no card in reader");
+            System.err.println("no card in reader");
             System.exit(0);
         }
 
         Card card = terminal.connect("T=1");
+
         ATR atr = card.getATR();
-        System.out.println(String.format("ATR: %s", atr.getBytes()));
+        ChipUtils.printATRInfo(atr);
 
         CardChannel channel = card.getBasicChannel();
 
-        CommandAPDU selectMF = new CommandAPDU(0x00, 0xA4, 0x00, 0x0C);
-        channel.transmit(selectMF);
+        CommandAPDU selectMasterFile = new CommandAPDU(0x00, 0xA4, 0x00, 0x0C);
+        ResponseAPDU selectMfResponse = channel.transmit(selectMasterFile);
+        checkResponse(selectMfResponse, "select master file");
+
 
         CommandAPDU selectPersonalDataFile = new CommandAPDU(0x00, 0xA4, 0x01, 0x0C, new byte[] { 0x50, 0x00 });
-        channel.transmit(selectPersonalDataFile);
+        ResponseAPDU selectPersonalDataFileResponse = channel.transmit(selectPersonalDataFile);
+        checkResponse(selectPersonalDataFileResponse, "select personal data file");
 
         CommandAPDU readBinary = new CommandAPDU(new byte[] { 0x00, (byte) 0xB0, 0x00, 0x00, 0x00 });
-        for (int i = 1; i <= PERSONAL_DATA_FILE_COUNT; i++) {
+        for (int i = 1; i <= ChipUtils.PERSONAL_DATA_FILE_COUNT; i++) {
             CommandAPDU selectChildEF = new CommandAPDU(0x00, 0xA4, 0x02, 0x0C, new byte[] { 0x50, (byte) i });
-            channel.transmit(selectChildEF);
+            ResponseAPDU selectChildEFResponse = channel.transmit(selectChildEF);
+            checkResponse(selectChildEFResponse, "select child file");
+
             ResponseAPDU response = channel.transmit(readBinary);
-            String record = new String(response.getData(), Charset.forName("UTF8")).trim();
-            System.out.println(String.format("PD%d = %s", i, record));
+            checkResponse(response, "read binary value");
+
+            String record = new String(response.getData(), StandardCharsets.UTF_8).trim();
+            String fileName = "PD" + i;
+            System.out.println(String.format("%s (%s) = %s",
+                    fileName, PersonDataFileUtils.translateField(fileName), record));
+        }
+
+        card.disconnect(true);
+    }
+
+    private static void checkResponse(ResponseAPDU response, String command) {
+        if(ChipUtils.COMMAND_PROCESS_STATUS_SUCCESS != response.getSW()) {
+            System.err.println(String.format("%s command failed: %s (%s)",
+                    command, Integer.toHexString(response.getSW()).toUpperCase(), ChipUtils.translateSw(response.getSW())));
+            System.exit(0);
         }
     }
 
