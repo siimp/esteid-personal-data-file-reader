@@ -30,7 +30,7 @@ java {
 
 application {
     mainClass = 'ee.siimp.esteid.personaldatafile.App'
-    mainModule = 'esteid.personal.data.file'
+    // mainModule = 'esteid.personal.data.file'
 }
 
 tasks.named('test') {
@@ -40,7 +40,7 @@ tasks.named('test') {
 jar {
     manifest {
         attributes(
-        'Main-Class': 'ee.siimp.esteid.personaldatafile.App'
+            'Main-Class': 'ee.siimp.esteid.personaldatafile.App'
         )
     }
     from {
@@ -50,15 +50,8 @@ jar {
 }
 
 extraJavaModuleInfo {
-    module('jna-4.0.0.jar', 'jna', '4.0.0') {
-        exports('jna')
-    }
+    module('net.java.dev.jna:jna', 'jna', '4.0.0') 
     module('io.github.jnasmartcardio:jnasmartcardio', 'jnasmartcardio', '0.2.7') {
         exports('jnasmartcardio')
-        requires('jna')
     }
-}
-
-java {
-    modularity.inferModulePath = true
 }
