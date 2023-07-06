@@ -1,3 +1,4 @@
-module esteid.personal.data.file.reader {
+module esteid.personal.data.file {
     requires java.smartcardio;
+    requires jnasmartcardio;
 }

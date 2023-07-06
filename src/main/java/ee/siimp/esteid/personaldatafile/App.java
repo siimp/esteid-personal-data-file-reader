@@ -2,9 +2,9 @@ package ee.siimp.esteid.personaldatafile;
 
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.List;
 
+import javax.smartcardio.ATR;
 import javax.smartcardio.Card;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
@@ -17,7 +17,7 @@ public class App {
 
     public static final int PERSONAL_DATA_FILE_COUNT = 15;
 
-    public static void main(String[] args) throws CardException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws CardException, NoSuchAlgorithmException, InterruptedException {
         List<CardTerminal> terminals = TerminalFactory.getDefault().terminals().list();
 
         if (terminals.isEmpty()) {
@@ -25,14 +25,22 @@ public class App {
         }
 
         if (terminals.isEmpty()) {
-            System.out.println("no card terminals found");
+            System.out.println("no smartcard readers found");
             System.exit(0);
         }
 
         CardTerminal terminal = terminals.get(0);
-        System.out.println(String.format("using card terminal %s", terminal.getName()));
+        System.out.println(String.format("card reader: %s", terminal.getName()));
+
+        if (!terminal.isCardPresent()) {
+            System.out.println("no card in reader");
+            System.exit(0);
+        }
 
         Card card = terminal.connect("T=1");
+        ATR atr = card.getATR();
+        System.out.println(String.format("ATR: %s", atr.getBytes()));
+
         CardChannel channel = card.getBasicChannel();
 
         CommandAPDU selectMF = new CommandAPDU(0x00, 0xA4, 0x00, 0x0C);
@@ -50,4 +58,5 @@ public class App {
             System.out.println(String.format("PD%d = %s", i, record));
         }
     }
+
 }

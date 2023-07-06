@@ -7,7 +7,9 @@
 
 plugins {
     id 'application'
+    id("org.gradlex.extra-java-module-info") version "1.4.1"
 }
+
 
 repositories {
     mavenCentral()
@@ -28,8 +30,35 @@ java {
 
 application {
     mainClass = 'ee.siimp.esteid.personaldatafile.App'
+    mainModule = 'esteid.personal.data.file'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes(
+        'Main-Class': 'ee.siimp.esteid.personaldatafile.App'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+extraJavaModuleInfo {
+    module('jna-4.0.0.jar', 'jna', '4.0.0') {
+        exports('jna')
+    }
+    module('io.github.jnasmartcardio:jnasmartcardio', 'jnasmartcardio', '0.2.7') {
+        exports('jnasmartcardio')
+        requires('jna')
+    }
+}
+
+java {
+    modularity.inferModulePath = true
 }

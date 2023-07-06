@@ -1,9 +1,14 @@
 # esteid-personal-data-file-reader
 Java application to read personal data file from estonian ID-card (EstEID 2018)
 
+## Building
+```
+./gradlew jar
+```
+
 ## Running
 ```
-./gradlew run
+java -jar build/libs/esteid-personal-data-file-reader.jar
 ```
 
 ## Project creation
