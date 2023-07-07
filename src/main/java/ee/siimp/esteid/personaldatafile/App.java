@@ -29,13 +29,7 @@ public class App {
             System.exit(0);
         }
 
-        CardTerminal terminal = terminals.get(0);
-        System.err.println(String.format("card reader: %s", terminal.getName()));
-
-        if (!terminal.isCardPresent()) {
-            System.err.println("no card in reader");
-            System.exit(0);
-        }
+        CardTerminal terminal = selectCardTerminalWithCard(terminals);
 
         Card card = terminal.connect("T=1");
 
@@ -77,6 +71,26 @@ public class App {
                     command, Integer.toHexString(response.getSW()).toUpperCase(), ChipUtils.translateSw(response.getSW())));
             System.exit(0);
         }
+    }
+
+    private static CardTerminal selectCardTerminalWithCard(List<CardTerminal> terminals) throws CardException {
+        CardTerminal terminal = null;
+        for (CardTerminal cardTerminal: terminals) {
+            System.err.print(String.format("card reader: %s", cardTerminal.getName()));
+
+            if (!cardTerminal.isCardPresent()) {
+                System.err.println(" - no card in reader");
+            } else {
+                terminal = cardTerminal;
+                System.err.println();
+            }
+        }
+
+        if (terminal == null) {
+            System.err.println("no card in reader");
+            System.exit(0);
+        }
+        return terminal;
     }
 
 }
